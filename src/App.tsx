@@ -1,49 +1,41 @@
-import { addDoc, collection, getDocs } from "firebase/firestore";
-import { useEffect } from "react";
-import { db } from "./firebase";
+import { DocumentData, getDocs, Query, query, where } from "firebase/firestore";
+import { citiesRef, indexType } from "./indexType";
 
 const App = () => {
-  const onClick1 = async () => {
-    try {
-      const docRef = await addDoc(collection(db, "users"), {
-        first: "Ada",
-        last: "Lovelace",
-        born: 1815,
-      });
-      console.log("Document written with ID: ", docRef.id);
-    } catch (e) {
-      console.error("Error adding document: ", e);
-    }
-  };
+  const queries: Query<DocumentData>[] = [];
 
-  const onClick2 = async () => {
-    try {
-      const docRef = await addDoc(collection(db, "users"), {
-        first: "Alan",
-        middle: "Mathison",
-        last: "Turing",
-        born: 1912,
-      });
+  queries.push(query(citiesRef, where("state", "==", "CA")));
+  queries.push(query(citiesRef, where("name", ">=", "San Francisco")));
+  queries.push(query(citiesRef, where("capital", "==", true)));
+  queries.push(
+    query(citiesRef, where("country", "in", ["USA", "Japan", "China"]))
+  );
+  //compound equality queries
+  queries.push(
+    query(
+      citiesRef,
+      where("country", "==", "USA"),
+      where("capital", "==", false),
+      where("state", "==", "CA"),
+      where("population", "==", 860000)
+    )
+  );
 
-      console.log("Document written with ID: ", docRef.id);
-    } catch (e) {
-      console.error("Error adding document: ", e);
-    }
-  };
-
-  const onClick3 = async () => {
-    const querySnapshot = await getDocs(collection(db, "users"));
+  const executeQuery = async (query: Query<DocumentData>) => {
+    const querySnapshot = await getDocs(query);
     querySnapshot.forEach((doc) => {
-      console.log(doc);
-      console.log(`${doc.id} => ${doc.data()}`);
+      console.log(doc.id, " => ", doc.data());
     });
   };
 
   return (
     <div>
-      <button onClick={onClick1}>fire store1</button>
-      <button onClick={onClick2}>fire store2</button>
-      <button onClick={onClick3}>fire store3</button>
+      <button onClick={indexType}>indexType</button>
+      {queries.map((query, i) => (
+        <button onClick={() => executeQuery(query)} key={i}>
+          {i}
+        </button>
+      ))}
     </div>
   );
 };
